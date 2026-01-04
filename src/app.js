@@ -32,8 +32,15 @@ async function startServer() {
         await sequelize.authenticate();
         console.log('Conexión a la base de datos exitosa.');
 
-        if (process.env.NODE_ENV !== 'production') {
-            await sequelize.sync({ alter: true });
+        // Sincronizar tablas (crear si no existen)
+        // En producción, solo crea las tablas si SYNC_DB=true (no altera tablas existentes)
+        // En desarrollo, siempre sincroniza con alter: true
+        if (process.env.SYNC_DB === 'true' || process.env.NODE_ENV !== 'production') {
+            const syncOptions = process.env.NODE_ENV === 'production' 
+                ? { alter: false } // En producción, solo crea si no existen, no altera
+                : { alter: true }; // En desarrollo, altera las tablas existentes
+            
+            await sequelize.sync(syncOptions);
             console.log('Tablas sincronizadas con la base de datos.');
         }
 
