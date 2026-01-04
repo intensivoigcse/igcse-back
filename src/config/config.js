@@ -1,4 +1,22 @@
-require('dotenv').config(); 
+require('dotenv').config();
+
+// Función para parsear DATABASE_URL
+function parseDatabaseUrl() {
+  if (process.env.DATABASE_URL) {
+    const url = new URL(process.env.DATABASE_URL);
+    return {
+      username: url.username,
+      password: url.password,
+      database: url.pathname.slice(1), // Remover el '/' inicial
+      host: url.hostname,
+      port: url.port || 5432,
+      dialect: "postgres"
+    };
+  }
+  return null;
+}
+
+const dbConfig = parseDatabaseUrl();
 
 module.exports = {
   development: {
@@ -17,7 +35,7 @@ module.exports = {
     port: process.env.DB_PORT || 5432,
     dialect: "postgres"
   },
-  production: {
+  production: dbConfig || {
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,

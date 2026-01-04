@@ -8,7 +8,9 @@
     "test": "jest --runInBand",
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "migrate": "npx sequelize-cli db:migrate",
+    "build": "npm install && npm run migrate"
   },
   "keywords": [],
   "author": "",
