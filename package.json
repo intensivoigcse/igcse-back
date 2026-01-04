@@ -10,7 +10,7 @@
     "dev": "nodemon src/app.js",
     "lint": "eslint .",
     "migrate": "node scripts/run-migrations.js",
-    "build": "npm install && npm run migrate"
+    "build": "npm ci && npm run migrate"
   },
   "keywords": [],
   "author": "",
