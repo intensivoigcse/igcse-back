@@ -5,7 +5,14 @@
  * Maneja el caso cuando no hay migraciones y es compatible con Node.js 22
  */
 
-require('dotenv').config();
+// Cargar dotenv solo si está disponible (opcional en producción)
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv no está disponible, pero las variables de entorno ya están disponibles en Render
+  console.log('ℹ️  dotenv no disponible, usando variables de entorno del sistema');
+}
+
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
