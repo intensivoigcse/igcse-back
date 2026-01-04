@@ -1,4 +1,10 @@
-require('dotenv').config();
+// Cargar dotenv solo si está disponible (opcional en producción donde las variables ya están disponibles)
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv no disponible, pero las variables de entorno ya están disponibles en Render
+}
+
 const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
 const router = require('./routes');

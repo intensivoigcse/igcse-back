@@ -1,5 +1,10 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+// Cargar dotenv solo si está disponible (opcional en producción donde las variables ya están disponibles)
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv no disponible, pero las variables de entorno ya están disponibles en Render
+}
 
 function jwtAuth(required = true) {
     return async (ctx, next) => {
