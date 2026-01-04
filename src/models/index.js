@@ -15,7 +15,19 @@ if (!config) {
 }
 
 let sequelize;
-if (config.use_env_variable) {
+// Usar DATABASE_URL directamente si está disponible (para Render y otros servicios)
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: process.env.DATABASE_URL.includes('sslmode=require') ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
+    },
+    logging: false
+  });
+} else if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
