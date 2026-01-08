@@ -31,9 +31,8 @@ module.exports = {
     checkInscriptionOwnership() {
         return async (ctx, next) => {
             const userId = ctx.state.user.id;
+            const userRole = ctx.state.user.role;
             const inscription = await Inscription.findByPk(ctx.params.id);
-            const course = await Course.findByPk(inscription.courseId);
-            const professorId = course.professor_id;
 
             if (!inscription) {
                 ctx.status = 404;
@@ -41,12 +40,23 @@ module.exports = {
                 return;
             }
 
-            if (inscription.userId !== userId && professorId !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Unauthorized' };
+            const course = await Course.findByPk(inscription.courseId);
+            if (!course) {
+                ctx.status = 404;
+                ctx.body = { error: 'Course not found' };
                 return;
             }
-            await next();
+
+            const professorId = course.professor_id;
+
+            // Permitir si es admin, el dueño de la inscripción, o el profesor del curso
+            if (userRole === 'admin' || inscription.userId === userId || professorId === userId) {
+                await next();
+                return;
+            }
+
+            ctx.status = 403;
+            ctx.body = { error: 'Unauthorized' };
         };
     },
 
