@@ -1,9 +1,9 @@
-const { Course, Inscription, Announcement } = require('../../models');
+const { Course, Inscription, Document } = require('../../models');
 
 module.exports = {
     /**
-     * Verifica que el usuario sea profesor del curso o estudiante inscrito activo
-     * Para listar anuncios
+     * Verifica que el usuario tenga acceso a los materiales del curso
+     * (admin, profesor del curso o estudiante inscrito)
      */
     checkCourseAccess(idSource = 'params', idKey = 'courseId') {
         return async (ctx, next) => {
@@ -12,7 +12,7 @@ module.exports = {
             if (idSource === 'params') {
                 courseId = ctx.params[idKey];
             } else if (idSource === 'body') {
-                courseId = ctx.request.body[idKey] || ctx.request.body['course_id'];
+                courseId = ctx.request.body[idKey];
             }
 
             const course = await Course.findByPk(courseId);
@@ -53,7 +53,7 @@ module.exports = {
 
                 if (!inscription) {
                     ctx.status = 403;
-                    ctx.body = { error: 'You must have an active enrollment to view announcements' };
+                    ctx.body = { error: 'You must have an active enrollment to access materials' };
                     return;
                 }
 
@@ -69,59 +69,25 @@ module.exports = {
     },
 
     /**
-     * Verifica que el usuario sea profesor del curso (para crear anuncios)
+     * Verifica que el usuario pueda eliminar un documento
+     * (admin o profesor del curso)
      */
-    checkProfessorOfCourse(idSource = 'body', idKey = 'course_id') {
+    checkDocumentDeleteAccess() {
         return async (ctx, next) => {
-            let courseId;
+            const documentId = ctx.params.id;
 
-            if (idSource === 'params') {
-                courseId = ctx.params[idKey];
-            } else if (idSource === 'body') {
-                courseId = ctx.request.body[idKey] || ctx.request.body['courseId'];
-            }
+            const document = await Document.findByPk(documentId);
 
-            if (!courseId) {
-                ctx.status = 400;
-                ctx.body = { error: 'course_id is required' };
+            if (!document) {
+                ctx.status = 404;
+                ctx.body = { error: 'Document not found' };
                 return;
             }
 
-            const course = await Course.findByPk(courseId);
+            const course = await Course.findByPk(document.courseId);
             if (!course) {
                 ctx.status = 404;
                 ctx.body = { error: 'Course not found' };
-                return;
-            }
-
-            const userId = ctx.state.user.id;
-
-            if (course.professor_id !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Only the course professor can create announcements' };
-                return;
-            }
-
-            ctx.state.course = course;
-            ctx.state.isProfessor = true;
-            await next();
-        };
-    },
-
-    /**
-     * Verifica que el usuario sea el autor del anuncio
-     */
-    checkAnnouncementAuthor() {
-        return async (ctx, next) => {
-            const announcementId = ctx.params.id;
-
-            const announcement = await Announcement.findByPk(announcementId, {
-                include: [{ model: Course, as: 'course' }]
-            });
-
-            if (!announcement) {
-                ctx.status = 404;
-                ctx.body = { error: 'Announcement not found' };
                 return;
             }
 
@@ -130,23 +96,69 @@ module.exports = {
 
             // Admin tiene acceso completo
             if (userRole === 'admin') {
-                ctx.state.announcement = announcement;
-                ctx.state.course = announcement.course;
-                ctx.state.isProfessor = true;
+                ctx.state.document = document;
+                ctx.state.course = course;
                 await next();
                 return;
             }
 
-            if (announcement.authorId !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Only the announcement author can perform this action' };
+            // Profesor del curso puede eliminar
+            if (course.professor_id === userId) {
+                ctx.state.document = document;
+                ctx.state.course = course;
+                await next();
                 return;
             }
 
-            ctx.state.announcement = announcement;
-            ctx.state.course = announcement.course;
-            ctx.state.isProfessor = true;
-            await next();
+            ctx.status = 403;
+            ctx.body = { error: 'Only admin or course professor can delete materials' };
+        };
+    },
+
+    /**
+     * Verifica que el usuario pueda editar un documento
+     * (admin o profesor del curso)
+     */
+    checkDocumentEditAccess() {
+        return async (ctx, next) => {
+            const documentId = ctx.params.id;
+
+            const document = await Document.findByPk(documentId);
+
+            if (!document) {
+                ctx.status = 404;
+                ctx.body = { error: 'Document not found' };
+                return;
+            }
+
+            const course = await Course.findByPk(document.courseId);
+            if (!course) {
+                ctx.status = 404;
+                ctx.body = { error: 'Course not found' };
+                return;
+            }
+
+            const userId = ctx.state.user.id;
+            const userRole = ctx.state.user.role;
+
+            // Admin tiene acceso completo
+            if (userRole === 'admin') {
+                ctx.state.document = document;
+                ctx.state.course = course;
+                await next();
+                return;
+            }
+
+            // Profesor del curso puede editar
+            if (course.professor_id === userId) {
+                ctx.state.document = document;
+                ctx.state.course = course;
+                await next();
+                return;
+            }
+
+            ctx.status = 403;
+            ctx.body = { error: 'Only admin or course professor can edit materials' };
         };
     }
 };

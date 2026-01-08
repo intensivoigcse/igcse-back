@@ -25,6 +25,14 @@ module.exports = {
             const userId = ctx.state.user.id;
             const userRole = ctx.state.user.role;
 
+            // Admin tiene acceso completo
+            if (userRole === 'admin') {
+                ctx.state.course = course;
+                ctx.state.isProfessor = true;
+                await next();
+                return;
+            }
+
             // Profesor del curso tiene acceso
             if (userRole === 'professor' && course.professor_id === userId) {
                 ctx.state.course = course;
@@ -81,6 +89,15 @@ module.exports = {
             const userRole = ctx.state.user.role;
             const course = thread.course;
 
+            // Admin tiene acceso completo
+            if (userRole === 'admin') {
+                ctx.state.thread = thread;
+                ctx.state.course = course;
+                ctx.state.isProfessor = true;
+                await next();
+                return;
+            }
+
             // Profesor del curso tiene acceso
             if (userRole === 'professor' && course.professor_id === userId) {
                 ctx.state.thread = thread;
@@ -136,7 +153,17 @@ module.exports = {
             }
 
             const userId = ctx.state.user.id;
+            const userRole = ctx.state.user.role;
             const course = thread.course;
+
+            // Admin tiene acceso completo
+            if (userRole === 'admin') {
+                ctx.state.thread = thread;
+                ctx.state.course = course;
+                ctx.state.isProfessor = true;
+                await next();
+                return;
+            }
 
             // Es el autor del hilo
             if (thread.userId === userId) {

@@ -21,6 +21,12 @@ module.exports = {
             const userId = ctx.state.user.id;
             const userRole = ctx.state.user.role;
 
+            // Admin tiene acceso completo
+            if (userRole === 'admin') {
+                await next();
+                return;
+            }
+
             if (userRole === 'professor' && course.professor_id !== userId) {
                 ctx.status = 403;
                 ctx.body = { error: 'Unauthorized' };
