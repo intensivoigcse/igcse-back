@@ -5,9 +5,8 @@ module.exports = {
 
     checkCourseOwnership() {
         return async (ctx, next) => {
-
             const userId = ctx.state.user.id;
-
+            const userRole = ctx.state.user.role;
 
             const course = await Course.findByPk(ctx.params.id);
             if (!course) {
@@ -16,14 +15,14 @@ module.exports = {
                 return;
             }
             
-            if (course.professor_id !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Unauthorized' };
+            // Admin tiene acceso completo, o el profesor propietario
+            if (userRole === 'admin' || course.professor_id === userId) {
+                await next();
                 return;
             }
-            await next();
             
-        
+            ctx.status = 403;
+            ctx.body = { error: 'Unauthorized' };
         };
     },
 

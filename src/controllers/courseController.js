@@ -49,10 +49,15 @@ module.exports = {
                 modality,
                 schedule,
                 image_url,
-                status
+                status,
+                professor_id: bodyProfessorId
             } = ctx.request.body;
             
-            const professor_id = auth.getUserIdFromToken(ctx);
+            const userRole = ctx.state.user.role;
+            // Admin puede especificar profesor, de lo contrario usa el usuario autenticado
+            const professor_id = (userRole === 'admin' && bodyProfessorId) 
+                ? bodyProfessorId 
+                : auth.getUserIdFromToken(ctx);
 
             // Validations - CAMPOS OBLIGATORIOS
             if (!title || title.length < 5 || title.length > 100) {

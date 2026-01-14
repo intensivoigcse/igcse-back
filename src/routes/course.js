@@ -123,7 +123,15 @@ router.get('/:id', courseController.getById);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', auth.jwtAuth(), auth.checkRole(userRoles.professor), courseController.create);
+// Admin o profesor pueden crear cursos
+router.post('/', auth.jwtAuth(), (ctx, next) => {
+    const userRole = ctx.state.user.role;
+    if (userRole === 'admin' || userRole === userRoles.professor) {
+        return next();
+    }
+    ctx.status = 403;
+    ctx.body = { error: 'Unauthorized - Admin or Professor role required' };
+}, courseController.create);
 
 /**
  * @swagger

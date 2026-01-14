@@ -24,6 +24,14 @@ module.exports = {
             const userId = ctx.state.user.id;
             const userRole = ctx.state.user.role;
 
+            // Admin tiene acceso completo
+            if (userRole === 'admin') {
+                ctx.state.course = course;
+                ctx.state.isProfessor = true;
+                await next();
+                return;
+            }
+
             // Profesor del curso tiene acceso
             if (userRole === 'professor' && course.professor_id === userId) {
                 ctx.state.course = course;
@@ -80,16 +88,18 @@ module.exports = {
             }
 
             const userId = ctx.state.user.id;
+            const userRole = ctx.state.user.role;
 
-            if (course.professor_id !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Only the course professor can perform this action' };
+            // Admin tiene acceso completo, o el profesor del curso
+            if (userRole === 'admin' || course.professor_id === userId) {
+                ctx.state.course = course;
+                ctx.state.isProfessor = true;
+                await next();
                 return;
             }
 
-            ctx.state.course = course;
-            ctx.state.isProfessor = true;
-            await next();
+            ctx.status = 403;
+            ctx.body = { error: 'Only the course professor or admin can perform this action' };
         };
     },
 
@@ -111,17 +121,19 @@ module.exports = {
             }
 
             const userId = ctx.state.user.id;
+            const userRole = ctx.state.user.role;
 
-            if (session.course.professor_id !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Only the course professor can perform this action' };
+            // Admin tiene acceso completo, o el profesor del curso
+            if (userRole === 'admin' || session.course.professor_id === userId) {
+                ctx.state.session = session;
+                ctx.state.course = session.course;
+                ctx.state.isProfessor = true;
+                await next();
                 return;
             }
 
-            ctx.state.session = session;
-            ctx.state.course = session.course;
-            ctx.state.isProfessor = true;
-            await next();
+            ctx.status = 403;
+            ctx.body = { error: 'Only the course professor or admin can perform this action' };
         };
     },
 
@@ -147,18 +159,20 @@ module.exports = {
             }
 
             const userId = ctx.state.user.id;
+            const userRole = ctx.state.user.role;
 
-            if (record.session.course.professor_id !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Only the course professor can perform this action' };
+            // Admin tiene acceso completo, o el profesor del curso
+            if (userRole === 'admin' || record.session.course.professor_id === userId) {
+                ctx.state.record = record;
+                ctx.state.session = record.session;
+                ctx.state.course = record.session.course;
+                ctx.state.isProfessor = true;
+                await next();
                 return;
             }
 
-            ctx.state.record = record;
-            ctx.state.session = record.session;
-            ctx.state.course = record.session.course;
-            ctx.state.isProfessor = true;
-            await next();
+            ctx.status = 403;
+            ctx.body = { error: 'Only the course professor or admin can perform this action' };
         };
     },
 
@@ -224,19 +238,21 @@ module.exports = {
             }
 
             const userId = ctx.state.user.id;
+            const userRole = ctx.state.user.role;
 
-            if (justification.record.session.course.professor_id !== userId) {
-                ctx.status = 403;
-                ctx.body = { error: 'Only the course professor can review justifications' };
+            // Admin tiene acceso completo, o el profesor del curso
+            if (userRole === 'admin' || justification.record.session.course.professor_id === userId) {
+                ctx.state.justification = justification;
+                ctx.state.record = justification.record;
+                ctx.state.session = justification.record.session;
+                ctx.state.course = justification.record.session.course;
+                ctx.state.isProfessor = true;
+                await next();
                 return;
             }
 
-            ctx.state.justification = justification;
-            ctx.state.record = justification.record;
-            ctx.state.session = justification.record.session;
-            ctx.state.course = justification.record.session.course;
-            ctx.state.isProfessor = true;
-            await next();
+            ctx.status = 403;
+            ctx.body = { error: 'Only the course professor or admin can review justifications' };
         };
     }
 };
